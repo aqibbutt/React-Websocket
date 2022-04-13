@@ -170,7 +170,7 @@ const ChatRoom = () => {
                 <input
                   type="text"
                   className="input-message"
-                  placeholder="enter the message"
+                  placeholder="Write a message"
                   value={userData.message}
                   onChange={handleMessage}
                 />
@@ -209,7 +209,7 @@ const ChatRoom = () => {
                 <input
                   type="text"
                   className="input-message"
-                  placeholder="enter the message"
+                  placeholder="Write a message"
                   value={userData.message}
                   onChange={handleMessage}
                 />
