@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { over } from 'stompjs';
 import SockJS from 'sockjs-client';
+import {encode} from 'string-encode-decode';
 
 var stompClient = null;
 const ChatRoom = () => {
@@ -13,12 +14,33 @@ const ChatRoom = () => {
     connected: false,
     message: '',
   });
+
+  const [messageData, setMessageData] = useState({
+    body: 'testing1',
+    title: 'testing1',
+    subject: 'testing',
+    recipient: {
+      'id': 2
+    },
+    sender: {
+      id: 1
+    },
+    read_status: false,
+    conversation: {
+      id: null
+    }
+  });
   useEffect(() => {
     console.log(userData);
   }, [userData]);
 
+  
+  useEffect(() => {
+    console.log(messageData);
+  }, [messageData]);
+
   const connect = () => {
-    let Sock = new SockJS('http://localhost:8081/app');
+    let Sock = new SockJS('http://localhost:8081/tms-message-channel');
     stompClient = over(Sock);
     stompClient.connect({}, onConnected, onError);
   };
@@ -26,8 +48,12 @@ const ChatRoom = () => {
   const onConnected = () => {
     setUserData({ ...userData, connected: true });
     stompClient.subscribe('/chatroom/public', onMessageReceived);
+    console.log('userData');
+    console.log(userData);
+    
+    console.log(encode(userData.username));
     stompClient.subscribe(
-      '/user/' + userData.username + '/private',
+      '/user/' + userData.username  + '/private',
       onPrivateMessage
     );
     userJoin();
@@ -38,7 +64,7 @@ const ChatRoom = () => {
       senderName: userData.username,
       status: 'JOIN',
     };
-    stompClient.send('/app/message', {}, JSON.stringify(chatMessage));
+    stompClient.send('/tms-message-channel/message', {}, JSON.stringify(chatMessage));
   };
 
   const onMessageReceived = (payload) => {
@@ -59,6 +85,7 @@ const ChatRoom = () => {
 
   const onPrivateMessage = (payload) => {
     console.log(payload);
+    console.log("payload");
     var payloadData = JSON.parse(payload.body);
     if (privateChats.get(payloadData.senderName)) {
       privateChats.get(payloadData.senderName).push(payloadData);
@@ -85,27 +112,64 @@ const ChatRoom = () => {
         senderName: userData.username,
         message: userData.message,
         status: 'MESSAGE',
+        // body: userData.message,
+        // title: 'testing1',
+        // subject: 'testing',
+        // recipient: {
+        //   id: 2,
+        //   email:'aqbutt1@gmail.com'
+        // },
+        // sender: {
+        //   id: 1,
+        //   email:'aqbutt@gmail.com'
+        // },
+        // read_status: false,
+        // conversation: {
+        //   id: null
+        // }
+        
       };
       console.log(chatMessage);
-      stompClient.send('/app/message', {}, JSON.stringify(chatMessage));
+      stompClient.send('/tms-message-channel/message', {}, JSON.stringify(chatMessage));
       setUserData({ ...userData, message: '' });
     }
   };
 
   const sendPrivateValue = () => {
     if (stompClient) {
+      // var chatMessage = {
+      //   senderName: userData.username,
+      //   receiverName: tab,
+      //   message: userData.message,
+      //   status: 'MESSAGE',
+      // };
       var chatMessage = {
-        senderName: userData.username,
-        receiverName: tab,
-        message: userData.message,
-        status: 'MESSAGE',
+        // senderName: userData.username,
+        // message: userData.message,
+        // status: 'MESSAGE',
+        body: userData.message,
+        title: 'private message',
+        subject: 'provateMessage',
+        recipient: {
+          id: 2,
+          email_address: 'aqbutt1@gmail.com'
+        },
+        sender: {
+          id: 1,
+          email_address:'aqbutt@gmail.com'
+        },
+        read_status: false,
+        conversation: {
+          id: null
+        }
+        
       };
-
+      console.log(chatMessage);
       if (userData.username !== tab) {
         privateChats.get(tab).push(chatMessage);
         setPrivateChats(new Map(privateChats));
       }
-      stompClient.send('/app/private-message', {}, JSON.stringify(chatMessage));
+      stompClient.send('/tms-message-channel/private-message', {}, JSON.stringify(chatMessage));
       setUserData({ ...userData, message: '' });
     }
   };
@@ -119,10 +183,10 @@ const ChatRoom = () => {
     connect();
   };
   return (
-    <div className="container">
+    <div className='container'>
       {userData.connected ? (
-        <div className="chat-box">
-          <div className="member-list">
+        <div className='chat-box'>
+          <div className='member-list'>
             <ul>
               <li
                 onClick={() => {
@@ -146,8 +210,8 @@ const ChatRoom = () => {
             </ul>
           </div>
           {tab === 'CHATROOM' && (
-            <div className="chat-content">
-              <ul className="chat-messages">
+            <div className='chat-content'>
+              <ul className='chat-messages'>
                 {publicChats.map((chat, index) => (
                   <li
                     className={`message ${
@@ -156,27 +220,27 @@ const ChatRoom = () => {
                     key={index}
                   >
                     {chat.senderName !== userData.username && (
-                      <div className="avatar">{chat.senderName}</div>
+                      <div className='avatar'>{chat.senderName}</div>
                     )}
-                    <div className="message-data">{chat.message}</div>
+                    <div className='message-data'>{chat.message}</div>
                     {chat.senderName === userData.username && (
-                      <div className="avatar self">{chat.senderName}</div>
+                      <div className='avatar self'>{chat.senderName}</div>
                     )}
                   </li>
                 ))}
               </ul>
 
-              <div className="send-message">
+              <div className='send-message'>
                 <input
-                  type="text"
-                  className="input-message"
-                  placeholder="Write a message"
+                  type='text'
+                  className='input-message'
+                  placeholder='Write a message'
                   value={userData.message}
                   onChange={handleMessage}
                 />
                 <button
-                  type="button"
-                  className="send-button"
+                  type='button'
+                  className='send-button'
                   onClick={sendValue}
                 >
                   send
@@ -185,8 +249,8 @@ const ChatRoom = () => {
             </div>
           )}
           {tab !== 'CHATROOM' && (
-            <div className="chat-content">
-              <ul className="chat-messages">
+            <div className='chat-content'>
+              <ul className='chat-messages'>
                 {[...privateChats.get(tab)].map((chat, index) => (
                   <li
                     className={`message ${
@@ -195,27 +259,27 @@ const ChatRoom = () => {
                     key={index}
                   >
                     {chat.senderName !== userData.username && (
-                      <div className="avatar">{chat.senderName}</div>
+                      <div className='avatar'>{chat.senderName}</div>
                     )}
-                    <div className="message-data">{chat.message}</div>
+                    <div className='message-data'>{chat.message}</div>
                     {chat.senderName === userData.username && (
-                      <div className="avatar self">{chat.senderName}</div>
+                      <div className='avatar self'>{chat.senderName}</div>
                     )}
                   </li>
                 ))}
               </ul>
 
-              <div className="send-message">
+              <div className='send-message'>
                 <input
-                  type="text"
-                  className="input-message"
-                  placeholder="Write a message"
+                  type='text'
+                  className='input-message'
+                  placeholder='Write a message'
                   value={userData.message}
                   onChange={handleMessage}
                 />
                 <button
-                  type="button"
-                  className="send-button"
+                  type='button'
+                  className='send-button'
                   onClick={sendPrivateValue}
                 >
                   send
@@ -225,16 +289,16 @@ const ChatRoom = () => {
           )}
         </div>
       ) : (
-        <div className="register">
+        <div className='register'>
           <input
-            id="user-name"
-            placeholder="Enter your name"
-            name="userName"
+            id='user-name'
+            placeholder='Enter your name'
+            name='userName'
             value={userData.username}
             onChange={handleUsername}
-            margin="normal"
+            margin='normal'
           />
-          <button type="button" onClick={registerUser}>
+          <button type='button' onClick={registerUser}>
             connect
           </button>
         </div>
