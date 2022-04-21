@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { over } from 'stompjs';
 import SockJS from 'sockjs-client';
-import {encode} from 'string-encode-decode';
 
 var stompClient = null;
 const ChatRoom = () => {
@@ -15,29 +14,10 @@ const ChatRoom = () => {
     message: '',
   });
 
-  const [messageData, setMessageData] = useState({
-    body: 'testing1',
-    title: 'testing1',
-    subject: 'testing',
-    recipient: {
-      'id': 2
-    },
-    sender: {
-      id: 1
-    },
-    read_status: false,
-    conversation: {
-      id: null
-    }
-  });
+
   useEffect(() => {
     console.log(userData);
   }, [userData]);
-
-  
-  useEffect(() => {
-    console.log(messageData);
-  }, [messageData]);
 
   const connect = () => {
     let Sock = new SockJS('http://localhost:8081/tms-message-channel');
@@ -48,10 +28,7 @@ const ChatRoom = () => {
   const onConnected = () => {
     setUserData({ ...userData, connected: true });
     stompClient.subscribe('/chatroom/public', onMessageReceived);
-    console.log('userData');
-    console.log(userData);
     
-    console.log(encode(userData.username));
     stompClient.subscribe(
       '/user/' + userData.username  + '/private',
       onPrivateMessage
@@ -111,23 +88,7 @@ const ChatRoom = () => {
       var chatMessage = {
         senderName: userData.username,
         message: userData.message,
-        status: 'MESSAGE',
-        // body: userData.message,
-        // title: 'testing1',
-        // subject: 'testing',
-        // recipient: {
-        //   id: 2,
-        //   email:'aqbutt1@gmail.com'
-        // },
-        // sender: {
-        //   id: 1,
-        //   email:'aqbutt@gmail.com'
-        // },
-        // read_status: false,
-        // conversation: {
-        //   id: null
-        // }
-        
+        status: 'MESSAGE'       
       };
       console.log(chatMessage);
       stompClient.send('/tms-message-channel/message', {}, JSON.stringify(chatMessage));
@@ -137,16 +98,7 @@ const ChatRoom = () => {
 
   const sendPrivateValue = () => {
     if (stompClient) {
-      // var chatMessage = {
-      //   senderName: userData.username,
-      //   receiverName: tab,
-      //   message: userData.message,
-      //   status: 'MESSAGE',
-      // };
       var chatMessage = {
-        // senderName: userData.username,
-        // message: userData.message,
-        // status: 'MESSAGE',
         body: userData.message,
         title: 'private message',
         subject: 'provateMessage',
